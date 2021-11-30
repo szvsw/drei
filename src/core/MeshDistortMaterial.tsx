@@ -9,6 +9,7 @@ type DistortMaterialType = JSX.IntrinsicElements['meshPhysicalMaterial'] & {
   time?: number
   distort?: number
   radius?: number
+  scale?: number
 }
 
 type Props = DistortMaterialType & {
@@ -32,6 +33,7 @@ class DistortMaterialImpl extends MeshPhysicalMaterial {
   _time: Uniform<number>
   _distort: Uniform<number>
   _radius: Uniform<number>
+  _scale: Uniform<number>
 
   constructor(parameters: MeshPhysicalMaterialParameters = {}) {
     super(parameters)
@@ -39,16 +41,19 @@ class DistortMaterialImpl extends MeshPhysicalMaterial {
     this._time = { value: 0 }
     this._distort = { value: 0.4 }
     this._radius = { value: 1 }
+    this._scale = { value: 1 }
   }
 
   onBeforeCompile(shader: Shader) {
     shader.uniforms.time = this._time
     shader.uniforms.radius = this._radius
     shader.uniforms.distort = this._distort
+    shader.uniforms.scale = this._scale
 
     shader.vertexShader = `
       uniform float time;
       uniform float radius;
+      uniform float scale;
       uniform float distort;
       ${distort}
       ${shader.vertexShader}
@@ -57,7 +62,7 @@ class DistortMaterialImpl extends MeshPhysicalMaterial {
       '#include <begin_vertex>',
       `
         float updateTime = time / 50.0;
-        float noise = snoise(vec3(position / 2.0 + updateTime * 5.0));
+        float noise = snoise(vec3(scale* (position / 2.0 + updateTime * 5.0)));
         vec3 transformed = vec3(position * (noise * pow(distort, 2.0) + radius));
         `
     )
@@ -85,6 +90,14 @@ class DistortMaterialImpl extends MeshPhysicalMaterial {
 
   set radius(v) {
     this._radius.value = v
+  }
+
+  get scale() {
+    return this._scale.value
+  }
+
+  set scale(v) {
+    this._scale.value = v
   }
 }
 
